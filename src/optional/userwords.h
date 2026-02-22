@@ -1,8 +1,8 @@
 /**
 Connect ESP32-S3 to ESP-NN
    Filename:      userwords.h
-   Date:          03 feb 2026
-   Updated:       03 feb 2026
+   Date:          22 feb 2026
+   Updated:       22 feb 2026
    File Version:  1.0
    MCU:           ESP32-S3 WROOM only !!
    Forth:         ESP32forth all versions 7.0.7.21c+
@@ -11,54 +11,86 @@ Connect ESP32-S3 to ESP-NN
    GNU General Public License
 */
 
+// link: https://github.com/espressif/esp-nn
 
-
-#include "esp_nn_wrapper.h"
+extern "C" {
+  #include "esp_nn.h"
+}
 
 #define USER_WORDS \
-X("nn.dot_product_s8", NN_DOT_S8, \
-    int32_t res = 0; \
-    esp_nn_dot_product_s8((int8_t*)n3, (int8_t*)n2, (int16_t)n1, (int16_t)n0, &res); \
-    DROPn(3); n0 = res) \
-X("nn.dot_product_s16", NN_DOT_S16, \
-    int32_t res = 0; \
-    esp_nn_dot_product_s16((int16_t*)n3, (int16_t*)n2, (int16_t)n1, (int16_t)n0, &res); \
-    DROPn(3); n0 = res) \
-X("nn.relu_s8", NN_RELU_S8, \
-    esp_nn_relu_s8((int8_t*)n1, (int32_t)n0); \
-    DROPn(2)) \
-X("nn.relu_s16", NN_RELU_S16, \
-    esp_nn_relu_s16((int16_t*)n1, (uint16_t)n0); \
-    DROPn(2)) \
-X("nn.relu6_s8", NN_RELU6_S8, \
-    esp_nn_relu6_s8((int8_t*)n1, (int32_t)n0); \
-    DROPn(2)) \
-X("nn.add_s8", NN_ADD_S8, \
-    esp_nn_add_elementwise_s8((int8_t*)n3, (int8_t*)n2, (int8_t*)n1, (int32_t)n0); \
+/** nn.add_elementwise_s8 ( ..16elements.. -- ) */ \
+X("nn.add_elementwise_s8", NN_ADD_S8, \
+    esp_nn_add_elementwise_s8( \
+        (const int8_t*)n15,     /* input1_data */ \
+        (const int8_t*)n14,     /* input2_data */ \
+        (int32_t)n13,           /* input 1 offset */ \
+        (int32_t)n12,           /* input 2 offset */ \
+        (int32_t)n11,           /* input 1 multiplier */ \
+        (int32_t)n10,           /* input 2 multiplier */ \
+        (int32_t)n9,            /* input 1 shift */ \
+        (int32_t)n8,            /* input 2 shift */ \
+        (int32_t)n7,            /* left_shift */ \
+        (int8_t*)n6,            /* output pointer */ \
+        (int32_t)n5,            /* out_offset */ \
+        (int32_t)n4,            /* out_mult */ \
+        (int32_t)n3,            /* out_shift */ \
+        (int32_t)n2,            /* activation min */ \
+        (int32_t)n1,            /* activation max */ \
+        (int32_t)n0             /* size */ \
+    ); DROPn(16)) \
+/** nn.mul_elementwise_s8 ( ..11elements.. -- ) */ \
+X("nn.mul_elementwise_s8", NN_MUL_S8, \
+    esp_nn_mul_elementwise_s8( \
+        (const int8_t*)n10,     /* input1_data */ \
+        (const int8_t*)n9,     /* input2_data */ \
+        (int32_t)n8,            /* input 1 offset */ \
+        (int32_t)n7,            /* input 2 offset */ \
+        (int8_t*)n6,            /* output pointer */ \
+        (int32_t)n5,            /* out_offset */ \
+        (int32_t)n4,            /* out_mult */ \
+        (int32_t)n3,            /* out_shift */ \
+        (int32_t)n2,            /* activation min */ \
+        (int32_t)n1,            /* activation max */ \
+        (int32_t)n0             /* size */ \
+    ); DROPn(11)) \
+/** nn.set_element_s8 ( array index size value -- ) */ \
+X("nn.set_element_s8", NN_SET_S8, \
+    { \
+        int8_t *arr = (int8_t*)n3; \
+        int32_t idx = (int32_t)n2; \
+        int32_t sz  = (int32_t)n1; \
+        int8_t  val = (int8_t)n0;  \
+        if (idx >= 0 && idx < sz) { \
+            arr[idx] = val; \
+        } \
+    } \
     DROPn(4)) \
-X("nn.mul_s8", NN_MUL_S8, \
-    esp_nn_mul_elementwise_s8((int8_t*)n3, (int8_t*)n2, (int8_t*)n1, (int32_t)n0); \
+/** nn.get_element_s8 ( array index -- value ) */ \
+X("nn.get_element_s8", NN_GET_S8, \
+    { \
+        const int8_t *arr = (const int8_t*)n1; \
+        int32_t idx = (int32_t)n0; \
+        n1 = (int32_t)arr[idx]; \
+    } \
+    DROPn(1)) \
+/** nn.set_element_s16 ( array index size value -- ) */ \
+X("nn.set_element_s16", NN_SET_S16, \
+    { \
+        int16_t *arr = (int16_t*)n3; \
+        int32_t idx = (int32_t)n2; \
+        int32_t sz  = (int32_t)n1; \
+        int16_t val = (int16_t)n0; \
+        if (idx >= 0 && idx < sz) { \
+            arr[idx] = val; \
+        } \
+    } \
     DROPn(4)) \
-X("nn.max_pool_s8", NN_MAXPOOL_S8, \
-    esp_nn_max_pool_s8((int8_t*)n4, (int8_t*)n3, (int16_t)n2, (int16_t)n1, (int16_t)n0); \
-    DROPn(5)) \
-X("nn.avg_pool_s8", NN_AVGPOOL_S8, \
-    esp_nn_avg_pool_s8((int8_t*)n4, (int8_t*)n3, (int16_t)n2, (int16_t)n1, (int16_t)n0); \
-    DROPn(5)) \
-X("nn.conv_s8", NN_CONV_S8, \
-    esp_nn_conv_s8_simple((int8_t*)n6, (int8_t*)n5, (int8_t*)n4, (int16_t)n3, (int16_t)n2, (int16_t)n1, (int16_t)n0); \
-    DROPn(7)) \
-X("nn.fc_s8", NN_FC_S8, \
-    esp_nn_fully_connected_s8((int8_t*)n4, (int8_t*)n3, (int8_t*)n2, (int16_t)n1, (int16_t)n0); \
-    DROPn(5)) \
-X("nn.set_s8", NN_SET_S8, \
-    esp_nn_set_element_s8((int8_t*)n3, (int32_t)n2, (int32_t)n1, (int8_t)n0); \
-    DROPn(4)) \
-X("nn.get_s8", NN_GET_S8, \
-    DROPn(1); n0 = esp_nn_get_element_s8((int8_t*)n1, (int32_t)n0)) \
-X("nn.set_s16", NN_SET_S16, \
-    esp_nn_set_element_s16((int16_t*)n3, (int32_t)n2, (int32_t)n1, (int16_t)n0); \
-    DROPn(4)) \
-X("nn.get_s16", NN_GET_S16, \
-    DROPn(1); n0 = esp_nn_get_element_s16((int16_t*)n1, (int32_t)n0))
+/** nn.get_element_s16 ( array index -- value ) */ \
+X("nn.get_element_s16", NN_GET_S16, \
+    { \
+        const int16_t *arr = (const int16_t*)n1; \
+        int32_t idx = (int32_t)n0; \
+        n1 = (int32_t)arr[idx]; \
+    } \
+    DROPn(1))
 
